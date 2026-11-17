@@ -2,7 +2,7 @@
 
 Infrastructure for running [minidis](https://github.com/ShearlingEnMouton/minidis) on Google Kubernetes Engine (GKE) Autopilot. The cloud resources are defined with Terraform, and the workloads are deployed with Argo CD from this repository (GitOps).
 
-This repository is a work in progress. The state bucket, the GKE cluster and the Argo CD installation exist so far; the Argo CD applications for minidis and monitoring are planned.
+This repository is a work in progress. The state bucket, the GKE cluster and the Argo CD installation and the minidis application exist so far; monitoring is planned.
 
 ## Layout
 
@@ -11,7 +11,7 @@ This repository is a work in progress. The state bucket, the GKE cluster and the
 | `terraform/bootstrap` | The Cloud Storage bucket that stores the Terraform state of the other configurations |
 | `terraform/gke` | The VPC network and subnet, and the GKE Autopilot cluster |
 | `terraform/argocd` | The Argo CD installation on the cluster, from the official Helm chart |
-| `argocd` | Argo CD applications for minidis and monitoring (planned) |
+| `argocd/apps` | Argo CD Applications, deployed by Argo CD from this repository |
 
 ## Requirements
 
@@ -107,6 +107,9 @@ The chart version is pinned in `main.tf`. `values.yaml` holds only the values th
 
 - The application controller, the repo server, the API server and Redis run with small resource requests. GKE Autopilot bills Pod requests and gives every container without requests 0.5 vCPU and 2 GiB of memory, so each component sets its own.
 - Dex (single sign-on), the notifications controller and the ApplicationSet controller are turned off, because this setup does not use them.
+- `configs.repositories` registers `ghcr.io/shearlingenmouton` as a Helm repository stored in an OCI registry (`enableOCI`), so Argo CD can pull the minidis chart. The registry is public, so no credentials are set.
+
+A second release installs the `argocd-apps` chart with `apps-values.yaml`. It creates one Application, `apps`, that points Argo CD at `argocd/apps` on the default branch of this repository. This is the only Application that Terraform manages. The applications themselves are files under `argocd/apps`: Argo CD creates and syncs them, and changing an application only needs a commit to that directory.
 
 The Argo CD server is reachable only inside the cluster (`ClusterIP`). To open the web UI:
 

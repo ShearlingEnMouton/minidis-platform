@@ -40,3 +40,11 @@ notifications:
 
 applicationSet:
   replicas: 0
+
+configs:
+  repositories:
+    minidis-helm:
+      name: minidis-helm
+      type: helm
+      url: ghcr.io/shearlingenmouton
+      enableOCI: "true"

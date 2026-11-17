@@ -1,0 +1,42 @@
+# Overrides for the argo-cd chart 10.18.0. Defaults: helm show values argo/argo-cd --version 10.18.0
+# GKE Autopilot bills Pod requests and sets 0.5 vCPU / 2 GiB on containers without them,
+# so every component that runs sets small requests (CPU:memory within 1:1 to 1:6.5).
+
+controller:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+repoServer:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+server:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+redis:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+redisSecretInit:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+dex:
+  enabled: false
+
+notifications:
+  enabled: false
+
+applicationSet:
+  replicas: 0

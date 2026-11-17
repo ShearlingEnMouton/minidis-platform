@@ -1,0 +1,15 @@
+applications:
+  apps:
+    namespace: argocd
+    project: default
+    source:
+      repoURL: https://github.com/ShearlingEnMouton/minidis-platform
+      targetRevision: HEAD
+      path: argocd/apps
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: argocd
+    syncPolicy:
+      automated:
+        prune: false
+        selfHeal: true

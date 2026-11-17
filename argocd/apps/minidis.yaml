@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: minidis
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: ghcr.io/shearlingenmouton
+    chart: minidis-helm
+    targetRevision: 1.0.0
+    helm:
+      releaseName: minidis
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: minidis
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      prune: false
+      selfHeal: true

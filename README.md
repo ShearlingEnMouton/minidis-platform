@@ -2,7 +2,35 @@
 
 Infrastructure for running [minidis](https://github.com/ShearlingEnMouton/minidis) on Google Kubernetes Engine (GKE) Autopilot. The cloud resources are defined with Terraform, and the workloads are deployed with Argo CD from this repository (GitOps).
 
-This repository is a work in progress. The state bucket, the GKE cluster and the Argo CD installation and the minidis application exist so far; monitoring is planned.
+The state bucket, the GKE cluster, the Argo CD installation and the minidis application are in place. Monitoring and `terraform plan` in pull requests are planned.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  repo["GitHub repository<br/>Terraform code, Argo CD apps"]
+  ci["GitHub Actions<br/>fmt and validate on pull requests"]
+  tf["Terraform<br/>bootstrap, gke, argocd"]
+  state[("Cloud Storage<br/>Terraform state")]
+  ghcr[("GHCR<br/>minidis image and chart")]
+
+  subgraph gcp["Google Cloud, europe-west9"]
+    subgraph gke["GKE Autopilot cluster, custom VPC"]
+      argocd["Argo CD"]
+      minidis["minidis"]
+    end
+  end
+
+  repo --> ci
+  repo --> tf
+  tf --> state
+  tf -->|creates cluster, installs Argo CD| gke
+  argocd -->|watches argocd/apps| repo
+  argocd -->|pulls chart| ghcr
+  argocd -->|deploys| minidis
+```
+
+Terraform creates the cloud resources, installs Argo CD and registers one root Application. From there, Argo CD deploys whatever `argocd/apps` on the default branch describes.
 
 ## Layout
 

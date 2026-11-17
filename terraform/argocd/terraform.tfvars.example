@@ -1,0 +1,3 @@
+project_id = "project-111111"
+region     = "europe-west9"
+cluster_name = "minidis"

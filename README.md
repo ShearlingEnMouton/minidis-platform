@@ -2,7 +2,7 @@
 
 Infrastructure for running [minidis](https://github.com/ShearlingEnMouton/minidis) on Google Kubernetes Engine (GKE) Autopilot. The cloud resources are defined with Terraform, and the workloads are deployed with Argo CD from this repository (GitOps).
 
-This repository is a work in progress. The state bucket and the GKE cluster exist so far; the Argo CD setup is planned.
+This repository is a work in progress. The state bucket, the GKE cluster and the Argo CD installation exist so far; the Argo CD applications for minidis and monitoring are planned.
 
 ## Layout
 
@@ -10,6 +10,7 @@ This repository is a work in progress. The state bucket and the GKE cluster exis
 | --- | --- |
 | `terraform/bootstrap` | The Cloud Storage bucket that stores the Terraform state of the other configurations |
 | `terraform/gke` | The VPC network and subnet, and the GKE Autopilot cluster |
+| `terraform/argocd` | The Argo CD installation on the cluster, from the official Helm chart |
 | `argocd` | Argo CD applications for minidis and monitoring (planned) |
 
 ## Requirements
@@ -87,6 +88,39 @@ The three ranges must not overlap. They cannot be changed on an existing cluster
 | `cluster_name` | Name of the cluster |
 | `cluster_location` | Region of the cluster |
 | `get_credentials_command` | `gcloud` command that adds the cluster to the local kubeconfig |
+
+## Argo CD
+
+`terraform/argocd` installs Argo CD into the `argocd` namespace with the `argo-cd` chart from the Argo project Helm repository. It is a separate configuration from `terraform/gke`: the Helm provider needs the address and credentials of a cluster that already exists, and configuring a provider from a resource created in the same configuration breaks when the cluster does not exist yet or is replaced.
+
+The configuration reads the cluster created by `terraform/gke` with a `google_container_cluster` data source and gets a short-lived access token from `google_client_config`, so no kubeconfig file and no stored credential is involved. Its state is stored in the bootstrap bucket under the `argocd` prefix.
+
+```sh
+cd terraform/argocd
+cp terraform.tfvars.example terraform.tfvars   # set project_id
+terraform init
+terraform plan
+terraform apply
+```
+
+The chart version is pinned in `main.tf`. `values.yaml` holds only the values that differ from the chart defaults:
+
+- The application controller, the repo server, the API server and Redis run with small resource requests. GKE Autopilot bills Pod requests and gives every container without requests 0.5 vCPU and 2 GiB of memory, so each component sets its own.
+- Dex (single sign-on), the notifications controller and the ApplicationSet controller are turned off, because this setup does not use them.
+
+The Argo CD server is reachable only inside the cluster (`ClusterIP`). To open the web UI:
+
+```sh
+kubectl -n argocd port-forward svc/argocd-server 8080:443
+```
+
+Then open `https://localhost:8080` and sign in as `admin`. `terraform output -raw argocd_admin_password_command` prints the command that reads the initial password. The password is not exposed as a Terraform output, so it is not written to the Terraform state.
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `project_id` | none | Google Cloud project that holds the cluster |
+| `region` | `europe-west9` | Region of the cluster |
+| `cluster_name` | `minidis` | Name of the cluster created by `terraform/gke` |
 
 ## Continuous integration
 

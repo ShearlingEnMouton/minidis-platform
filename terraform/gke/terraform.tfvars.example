@@ -1,0 +1,6 @@
+project_id = "project-111111"
+region     = "europe-west9"
+cluster_name = "minidis"
+subnet_node = "10.10.0.0/20"
+subnet_pod = "10.20.0.0/16"
+subnet_service = "10.30.0.0/20"

@@ -87,3 +87,12 @@ The three ranges must not overlap. They cannot be changed on an existing cluster
 | `cluster_name` | Name of the cluster |
 | `cluster_location` | Region of the cluster |
 | `get_credentials_command` | `gcloud` command that adds the cluster to the local kubeconfig |
+
+## Continuous integration
+
+The `terraform` workflow runs on every pull request and on every push to `main`. It needs no Google Cloud credentials:
+
+- `terraform fmt -check -recursive` checks the formatting of every configuration.
+- For each configuration, `terraform init -backend=false` installs the providers without reaching the state bucket, and `terraform validate` checks the syntax, the types and the references. Init runs with `-lockfile=readonly`, so the provider versions must match the committed `.terraform.lock.hcl`.
+
+A new configuration directory must be added to the `config` matrix in `.github/workflows/terraform.yaml`. Running `terraform plan` in pull requests is planned, using Workload Identity Federation instead of a stored service account key.
